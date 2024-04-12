@@ -14,26 +14,28 @@
 
 on:
   schedule:
-     - cron: 0 0 * * *
+    - cron: 0 0 * * *
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
 
 name: Update pkg/testutils/release/cockroach_releases.yaml
 jobs:
   update-crdb-releases-yaml:
-    if: github.repository == 'cockroachdb/cockroach'
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
     strategy:
       matrix:
-        branch: ["master", "release-23.1", "release-23.2", "release-24.1"]
+        branch: ["master"]
     name: Update pkg/testutils/release/cockroach_releases.yaml on ${{ matrix.branch }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "${{ matrix.branch }}"
       - name: Mount bazel cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: "~/.cache/bazel"
           key: bazel
@@ -43,13 +45,12 @@ jobs:
           $(bazel info bazel-bin)/pkg/cmd/release/release_/release update-releases-file
           git diff
       - name: Update pkg/testutils/release/cockroach_releases.yaml on ${{ matrix.branch }}
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
           base: "${{ matrix.branch }}"
-          branch: 'crdb-releases-yaml-update-${{ matrix.branch }}'
+          branch: "crdb-releases-yaml-update-${{ matrix.branch }}"
           title: "${{ matrix.branch }}: Update pkg/testutils/release/cockroach_releases.yaml"
           author: "CRL Release bot <teamcity@cockroachlabs.com>"
-          reviewers: rail,jlinder,celiala
           body: |
             Update pkg/testutils/release/cockroach_releases.yaml with recent values.
 

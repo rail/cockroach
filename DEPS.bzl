@@ -5451,11 +5451,9 @@ def go_deps():
         name = "com_github_kevinburke_go_bindata",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/kevinburke/go-bindata",
-        sha256 = "f087b3a77624a113883bac519ebd1a4de07b70ab2ebe73e61e52325ac30777e0",
-        strip_prefix = "github.com/kevinburke/go-bindata@v3.13.0+incompatible",
-        urls = [
-            "https://storage.googleapis.com/cockroach-godeps/gomod/github.com/kevinburke/go-bindata/com_github_kevinburke_go_bindata-v3.13.0+incompatible.zip",
-        ],
+        # TODO: mirror this repo (to fix, run `./dev generate bazel --mirror`)
+        sum = "h1:qajFA3D0pH94OTLU4zcCCKCDgR+Zr2cZK/RPJHDdFoY=",
+        version = "v3.24.0+incompatible",
     )
     go_repository(
         name = "com_github_kisielk_errcheck",

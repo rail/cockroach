@@ -142,7 +142,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/edsrzf/mmap-go v1.0.0
 	github.com/elastic/gosigar v0.14.3
-	github.com/emicklei/dot v0.15.0
+	github.com/emicklei/dot v1.6.2
 	github.com/fatih/color v1.9.0
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/getsentry/sentry-go v0.23.0

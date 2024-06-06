@@ -1,0 +1,42 @@
+name: Dependabot bazel updates
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: read
+jobs:
+  build:
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: dependabot-metadata
+        uses: dependabot/fetch-metadata@v1
+      - uses: actions/checkout@v4
+        if: ${{ steps.dependabot-metadata.outputs.package-ecosystem == 'go_modules' }}
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: bazelbuild/setup-bazelisk@v3
+        if: ${{ steps.dependabot-metadata.outputs.package-ecosystem == 'go_modules' }}
+
+      # TODO: use WIF to grant upload permissions for COCKROACH_BAZEL_CAN_MIRROR=1
+      - name: Run Gazelle
+        if: ${{ steps.dependabot-metadata.outputs.package-ecosystem == 'go_modules' }}
+        run: |
+          bazel run //:gazelle
+          ./build/bazelutil/bazel-generate.sh
+
+      - name: git update
+        if: ${{ steps.dependabot-metadata.outputs.package-ecosystem == 'go_modules' }}
+        run: |
+          git config --global user.name 'CRL Update bot'
+          git config --global user.email 'teamcity@cockroachlabs.com'
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+          git status
+          git diff
+          git add .
+          git commit -m "bazel: update dependencies"
+          git push -u origin HEAD:${{ github.event.pull_request.head.ref }}

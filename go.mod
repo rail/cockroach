@@ -169,7 +169,7 @@ require (
 	github.com/jaegertracing/jaeger v1.18.1
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/jordanlewis/gcassert v0.0.0-20240401195008-3141cbd028c0
-	github.com/kevinburke/go-bindata v3.13.0+incompatible
+	github.com/kevinburke/go-bindata v3.24.0+incompatible
 	github.com/kisielk/errcheck v1.6.1-0.20210625163953-8ddee489636a
 	github.com/kisielk/gotool v1.0.0
 	github.com/klauspost/compress v1.16.7

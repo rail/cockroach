@@ -2687,11 +2687,9 @@ def go_deps():
         name = "com_github_emicklei_dot",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/emicklei/dot",
-        sha256 = "b298e957fd7e38cd76b3953e47afcfd673a4f051884818a294ec4703476b6a39",
-        strip_prefix = "github.com/emicklei/dot@v0.15.0",
-        urls = [
-            "https://storage.googleapis.com/cockroach-godeps/gomod/github.com/emicklei/dot/com_github_emicklei_dot-v0.15.0.zip",
-        ],
+        # TODO: mirror this repo (to fix, run `./dev generate bazel --mirror`)
+        sum = "h1:08GN+DD79cy/tzN6uLCT84+2Wk9u+wvqP+Hkx/dIR8A=",
+        version = "v1.6.2",
     )
     go_repository(
         name = "com_github_emicklei_go_restful",

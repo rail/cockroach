@@ -4176,11 +4176,9 @@ def go_deps():
         name = "com_github_gorilla_mux",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/gorilla/mux",
-        sha256 = "7641911e00af9c91f089868333067c9cb9a58702d2c9ea821ee374940091c385",
-        strip_prefix = "github.com/gorilla/mux@v1.8.0",
-        urls = [
-            "https://storage.googleapis.com/cockroach-godeps/gomod/github.com/gorilla/mux/com_github_gorilla_mux-v1.8.0.zip",
-        ],
+        # TODO: mirror this repo (to fix, run `./dev generate bazel --mirror`)
+        sum = "h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=",
+        version = "v1.8.1",
     )
     go_repository(
         name = "com_github_gorilla_securecookie",

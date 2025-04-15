@@ -10,7 +10,7 @@ package typedesc
 import (
 	"bytes"
 	"context"
-	"slices"
+	"sort"
 	"strings"
 
 	"github.com/cockroachdb/cockroach/pkg/keys"
@@ -257,11 +257,6 @@ func (desc *immutable) DescriptorType() catalog.DescriptorType {
 	return catalog.Type
 }
 
-// GetReplicatedPCRVersion is a part of the catalog.Descriptor
-func (desc *immutable) GetReplicatedPCRVersion() descpb.DescriptorVersion {
-	return desc.ReplicatedPCRVersion
-}
-
 // MaybeIncrementVersion implements the MutableDescriptor interface.
 func (desc *Mutable) MaybeIncrementVersion() {
 	// Already incremented, no-op.
@@ -409,29 +404,25 @@ func (desc *Mutable) AddEnumValue(node *tree.AlterTypeAddValue) error {
 }
 
 // AddReferencingDescriptorID adds a new referencing descriptor ID to the
-// TypeDescriptor, ensuring no duplicates are added. Returns false if the ID
-// was already present and no changes were made.
-func (desc *Mutable) AddReferencingDescriptorID(new descpb.ID) bool {
+// TypeDescriptor. It ensures that duplicates are not added.
+func (desc *Mutable) AddReferencingDescriptorID(new descpb.ID) {
 	for _, id := range desc.ReferencingDescriptorIDs {
 		if new == id {
-			return false
+			return
 		}
 	}
 	desc.ReferencingDescriptorIDs = append(desc.ReferencingDescriptorIDs, new)
-	return true
 }
 
 // RemoveReferencingDescriptorID removes the desired referencing descriptor ID
-// from the catalog.TypeDescriptor. If the ID is not present, the method has no
-// effect and returns false to indicate that no removal occurred.
-func (desc *Mutable) RemoveReferencingDescriptorID(remove descpb.ID) bool {
+// from the catalog.TypeDescriptor. It has no effect if the requested ID is not present.
+func (desc *Mutable) RemoveReferencingDescriptorID(remove descpb.ID) {
 	for i, id := range desc.ReferencingDescriptorIDs {
 		if id == remove {
 			desc.ReferencingDescriptorIDs = append(desc.ReferencingDescriptorIDs[:i], desc.ReferencingDescriptorIDs[i+1:]...)
-			return true
+			return
 		}
 	}
-	return false
 }
 
 // SetParentSchemaID sets the SchemaID of the type.
@@ -443,6 +434,16 @@ func (desc *Mutable) SetParentSchemaID(schemaID descpb.ID) {
 func (desc *Mutable) SetName(name string) {
 	desc.Name = name
 }
+
+// EnumMembers is a sortable list of TypeDescriptor_EnumMember, sorted by the
+// physical representation.
+type EnumMembers []descpb.TypeDescriptor_EnumMember
+
+func (e EnumMembers) Len() int { return len(e) }
+func (e EnumMembers) Less(i, j int) bool {
+	return bytes.Compare(e[i].PhysicalRepresentation, e[j].PhysicalRepresentation) < 0
+}
+func (e EnumMembers) Swap(i, j int) { e[i], e[j] = e[j], e[i] }
 
 // ValidateSelf performs validation on the catalog.TypeDescriptor.
 func (desc *immutable) ValidateSelf(vea catalog.ValidationErrorAccumulator) {
@@ -513,9 +514,7 @@ func (desc *immutable) ValidateSelf(vea catalog.ValidationErrorAccumulator) {
 // Returns true iff the enums are sorted.
 func (desc *immutable) validateEnumMembers(vea catalog.ValidationErrorAccumulator) (isSorted bool) {
 	// All of the enum members should be in sorted order.
-	isSorted = slices.IsSortedFunc(desc.EnumMembers, func(a, b descpb.TypeDescriptor_EnumMember) int {
-		return bytes.Compare(a.PhysicalRepresentation, b.PhysicalRepresentation)
-	})
+	isSorted = sort.IsSorted(EnumMembers(desc.EnumMembers))
 	if !isSorted {
 		vea.Report(errors.AssertionFailedf("enum members are not sorted %v", desc.EnumMembers))
 	}
@@ -920,22 +919,6 @@ func (desc *immutable) ForEachUDTDependentForHydration(fn func(t *types.T) error
 		}
 	}
 	return nil
-}
-
-// MaybeRequiresTypeHydration implements the catalog.Descriptor interface.
-func (desc *immutable) MaybeRequiresTypeHydration() bool {
-	if desc.Alias != nil && catid.IsOIDUserDefined(desc.Alias.Oid()) {
-		return true
-	}
-	if desc.Composite == nil {
-		return false
-	}
-	for _, e := range desc.Composite.Elements {
-		if catid.IsOIDUserDefined(e.ElementType.Oid()) {
-			return true
-		}
-	}
-	return false
 }
 
 // GetIDClosure implements the TypeDescriptor interface.

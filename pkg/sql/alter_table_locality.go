@@ -666,10 +666,9 @@ func setNewLocalityConfig(
 		if err != nil {
 			return err
 		}
-		if typ.RemoveReferencingDescriptorID(desc.GetID()) {
-			if err := descsCol.WriteDescToBatch(ctx, kvTrace, typ, b); err != nil {
-				return err
-			}
+		typ.RemoveReferencingDescriptorID(desc.GetID())
+		if err := descsCol.WriteDescToBatch(ctx, kvTrace, typ, b); err != nil {
+			return err
 		}
 	}
 	desc.LocalityConfig = &config
@@ -679,10 +678,9 @@ func setNewLocalityConfig(
 		if err != nil {
 			return err
 		}
-		if typ.AddReferencingDescriptorID(desc.GetID()) {
-			if err := descsCol.WriteDescToBatch(ctx, kvTrace, typ, b); err != nil {
-				return err
-			}
+		typ.AddReferencingDescriptorID(desc.GetID())
+		if err := descsCol.WriteDescToBatch(ctx, kvTrace, typ, b); err != nil {
+			return err
 		}
 	}
 	return nil

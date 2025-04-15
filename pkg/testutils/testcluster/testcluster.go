@@ -28,7 +28,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/liveness/livenesspb"
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/storeliveness"
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/storeliveness/storelivenesspb"
-	"github.com/cockroachdb/cockroach/pkg/multitenant/tenantcapabilitiespb"
+	"github.com/cockroachdb/cockroach/pkg/multitenant/tenantcapabilities"
 	"github.com/cockroachdb/cockroach/pkg/raft/raftpb"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/rpc"
@@ -133,11 +133,6 @@ func (tc *TestCluster) SystemLayer(idx int) serverutils.ApplicationLayerInterfac
 // cluster.
 func (tc *TestCluster) StorageLayer(idx int) serverutils.StorageLayerInterface {
 	return tc.Server(idx).StorageLayer()
-}
-
-// DefaultTenantDeploymentMode implements TestClusterInterface.
-func (tc *TestCluster) DefaultTenantDeploymentMode() serverutils.DeploymentMode {
-	return tc.Server(0).DeploymentMode()
 }
 
 // stopServers stops the stoppers for each individual server in the cluster.
@@ -840,9 +835,6 @@ func (tc *TestCluster) changeReplicas(
 			ctx, keys.RangeDescriptorKey(startKey), &beforeDesc,
 		); err != nil {
 			return errors.Wrap(err, "range descriptor lookup error")
-		}
-		if !beforeDesc.IsInitialized() {
-			return errors.Errorf("no RangeDescriptor found")
 		}
 		var err error
 		desc, err = db.AdminChangeReplicas(
@@ -2090,20 +2082,9 @@ func (tc *TestCluster) SplitTable(
 	}
 }
 
-// GrantTenantCapabilities implements TestClusterInterface.
-func (tc *TestCluster) GrantTenantCapabilities(
-	ctx context.Context,
-	t serverutils.TestFataler,
-	tenID roachpb.TenantID,
-	targetCaps map[tenantcapabilitiespb.ID]string,
-) {
-	require.NoError(t, tc.Server(0).TenantController().GrantTenantCapabilities(ctx, tenID, targetCaps))
-	tc.WaitForTenantCapabilities(t, tenID, targetCaps)
-}
-
 // WaitForTenantCapabilities implements TestClusterInterface.
 func (tc *TestCluster) WaitForTenantCapabilities(
-	t serverutils.TestFataler, tenID roachpb.TenantID, targetCaps map[tenantcapabilitiespb.ID]string,
+	t serverutils.TestFataler, tenID roachpb.TenantID, targetCaps map[tenantcapabilities.ID]string,
 ) {
 	for i, ts := range tc.Servers {
 		serverutils.WaitForTenantCapabilities(t, ts, tenID, targetCaps, fmt.Sprintf("server %d", i))

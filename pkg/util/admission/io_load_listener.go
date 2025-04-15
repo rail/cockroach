@@ -307,7 +307,7 @@ func computeCumStoreCompactionStats(m *pebble.Metrics) cumStoreCompactionStats {
 	baseLevel := -1
 	for i := range m.Levels {
 		compactedWriteBytes += m.Levels[i].BytesCompacted
-		if i > 0 && m.Levels[i].TablesSize > 0 && baseLevel < 0 {
+		if i > 0 && m.Levels[i].Size > 0 && baseLevel < 0 {
 			baseLevel = i
 		}
 	}
@@ -472,6 +472,10 @@ func (t *tokenAllocationTicker) adjustmentStart(loaded bool) {
 	t.adjustmentIntervalStartTime = timeutil.Now()
 }
 
+func (t *tokenAllocationTicker) tick() {
+	<-t.ticker.C
+}
+
 // remainingTicks will return the remaining ticks before the next adjustment
 // interval is reached while assuming that all future ticks will have a duration of
 // expectedTickDuration. A return value of 0 indicates that adjustmentStart must
@@ -546,7 +550,7 @@ func (io *ioLoadListener) pebbleMetricsTick(ctx context.Context, metrics StoreMe
 		io.adjustTokensResult = adjustTokensResult{
 			ioLoadListenerState: ioLoadListenerState{
 				cumL0AddedBytes:              m.Levels[0].BytesFlushed + m.Levels[0].BytesIngested,
-				curL0Bytes:                   m.Levels[0].TablesSize,
+				curL0Bytes:                   m.Levels[0].Size,
 				cumWriteStallCount:           metrics.WriteStallCount,
 				cumFlushWriteThroughput:      m.Flush.WriteThroughput,
 				cumCompactionStats:           computeCumStoreCompactionStats(m),
@@ -564,9 +568,9 @@ func (io *ioLoadListener) pebbleMetricsTick(ctx context.Context, metrics StoreMe
 			ioThreshold: &admissionpb.IOThreshold{
 				L0NumSubLevels:           int64(m.Levels[0].Sublevels),
 				L0NumSubLevelsThreshold:  math.MaxInt64,
-				L0NumFiles:               m.Levels[0].TablesCount,
+				L0NumFiles:               m.Levels[0].NumFiles,
 				L0NumFilesThreshold:      math.MaxInt64,
-				L0Size:                   m.Levels[0].TablesSize,
+				L0Size:                   m.Levels[0].Size,
 				L0MinimumSizePerSubLevel: 0,
 			},
 		}
@@ -831,11 +835,11 @@ func (io *ioLoadListener) adjustTokensInner(
 	memTableSizeForStopWrites uint64,
 ) adjustTokensResult {
 	ioThreshold := &admissionpb.IOThreshold{
-		L0NumFiles:               l0Metrics.TablesCount,
+		L0NumFiles:               l0Metrics.NumFiles,
 		L0NumFilesThreshold:      threshNumFiles,
 		L0NumSubLevels:           int64(l0Metrics.Sublevels),
 		L0NumSubLevelsThreshold:  threshNumSublevels,
-		L0Size:                   l0Metrics.TablesSize,
+		L0Size:                   l0Metrics.Size,
 		L0MinimumSizePerSubLevel: l0MinSizePerSubLevel,
 	}
 	unflushedMemTableTooLarge := memTableSize > memTableSizeForStopWrites
@@ -845,7 +849,7 @@ func (io *ioLoadListener) adjustTokensInner(
 	// history.
 	recentUnflushedMemTableTooLarge := unflushedMemTableTooLarge || io.unflushedMemTableTooLarge
 
-	curL0Bytes := l0Metrics.TablesSize
+	curL0Bytes := l0Metrics.Size
 	cumL0AddedBytes := l0Metrics.BytesFlushed + l0Metrics.BytesIngested
 	// L0 growth over the last interval.
 	intL0AddedBytes := int64(cumL0AddedBytes) - int64(prev.cumL0AddedBytes)

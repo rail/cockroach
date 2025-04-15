@@ -170,9 +170,7 @@ func (p *planner) addTypeBackReference(
 		return err
 	}
 
-	if !mutDesc.AddReferencingDescriptorID(ref) {
-		return nil // no-op
-	}
+	mutDesc.AddReferencingDescriptorID(ref)
 	return p.writeTypeSchemaChange(ctx, mutDesc, jobDesc)
 }
 
@@ -184,10 +182,9 @@ func (p *planner) removeTypeBackReferences(
 		if err != nil {
 			return err
 		}
-		if mutDesc.RemoveReferencingDescriptorID(ref) {
-			if err := p.writeTypeSchemaChange(ctx, mutDesc, jobDesc); err != nil {
-				return err
-			}
+		mutDesc.RemoveReferencingDescriptorID(ref)
+		if err := p.writeTypeSchemaChange(ctx, mutDesc, jobDesc); err != nil {
+			return err
 		}
 	}
 	return nil
